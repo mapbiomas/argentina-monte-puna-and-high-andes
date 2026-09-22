@@ -12,3 +12,4 @@ We highly recommend reading the [Monte, Puna and High Andes Algorithm Theoretica
 
 * [Collection 1](./Collection%201/workflow)
 * [Collection 2](./Collection%202/workflow)
+* [Collection 3](./Collection%203/workflow)
