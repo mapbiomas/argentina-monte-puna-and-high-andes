@@ -1,5 +1,5 @@
 // ============================================================
-// Cuyo Collection 3 | Script 06c — Temporal Gap Fill
+// Monte, Puna and High Andes | Collection 3 | Script 06c — Temporal Gap Fill
 // ============================================================
 //
 // DESCRIPTION:
@@ -23,18 +23,18 @@
 //
 // INPUT:
 //   - Corrected classification (script 06b output).
-//   - Zones FeatureCollection (Cuyo regions) — used only as the export
-//     region.
+//   - Zones FeatureCollection (Monte, Puna and High Andes regions) —
+//     used only as the export region.
 //
 // OUTPUT:
 //   - Gap-filled classification with added `_conn` bands. Exported as
-//     `CUYO-INTEGRADO-3`.
+//     `MPHA-INTEGRATED-3`.
 //
 // PREVIOUS STEP: 06b-remaps1.js (produces the corrected classification
 //                this script gap-fills)
 // NEXT STEP:     07-spatial_filter.js
 //
-// AUTHORS: MapBiomas Argentina — Cuyo team
+// AUTHORS: MapBiomas Argentina — Monte, Puna and High Andes team
 // ============================================================
 
 
@@ -59,15 +59,16 @@ var years = [
 // ============================================================
 // 🔁 REPLACE: Update to your own GEE asset folder for the classification
 // output.
-var assetClass = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/COMPLEMENT_CLASSIFICATION/CUYO';
+var assetClass = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/COMPLEMENT_CLASSIFICATION/MPHA';
 
-// 🔁 REPLACE: Zones FeatureCollection (Cuyo regions).
-var assetRegions = 'projects/YOUR-PROJECT/assets/ANCILLARY_DATA/VECTOR/CUYO/regional-assets_cuyo-argcol2_buffer2km_reg';
+// 🔁 REPLACE: Zones FeatureCollection (Monte, Puna and High Andes
+// regions).
+var assetRegions = 'projects/YOUR-PROJECT/assets/ANCILLARY_DATA/VECTOR/MPHA/regional-assets_mpha-argcol2_buffer2km_reg';
 
 var regions = ee.FeatureCollection(assetRegions);
 
 // 🔁 REPLACE: Corrected classification (script 06b output).
-var image = ee.Image('projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/COMPLEMENT_CLASSIFICATION/CUYO/CUYO-INTEGRADO-2');
+var image = ee.Image('projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/COMPLEMENT_CLASSIFICATION/MPHA/MPHA-INTEGRATED-2');
 
 
 // ============================================================
@@ -184,10 +185,10 @@ var imageFilledConnected = imageFilledtnt0.addBands(
 // ============================================================
 Export.image.toAsset({
     "image": imageFilledConnected,
-    "description": 'CUYO-INTEGRADO-3',
+    "description": 'MPHA-INTEGRATED-3',
     // 🔁 REPLACE: Update to your own GEE asset folder (see `assetClass`
     // above).
-    "assetId": assetClass + '/CUYO-INTEGRADO-3',
+    "assetId": assetClass + '/MPHA-INTEGRATED-3',
     "scale": 30,
     "pyramidingPolicy": {
         '.default': 'mode'

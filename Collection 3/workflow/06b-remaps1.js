@@ -1,12 +1,12 @@
 // ============================================================
-// Cuyo Collection 3 | Script 06b — Manual Class-Correction Remap (v1)
+// Monte, Puna and High Andes | Collection 3 | Script 06b — Manual Class-Correction Remap (v1)
 // ============================================================
 //
-// Este script es una versión revisada de los polígonos de remapeo de 2025.
-// Toma el resultado de la integración de metarregiones (06a-integration.js)
-// Aplica remap para una primera corrección de clases en base a polígonos,
-// y la corrección de sombras por pendiente.
-// Exporta complementaria metarregional v2.
+// This script is a revised version of the 2025 remap polygons.
+// Takes the result of the metaregion integration (06a-integration.js).
+// Applies a remap for a first correction of classes based on polygons,
+// and corrects shadows caused by slope.
+// Exports the v2 metaregional complementary classification.
 //
 // DESCRIPTION:
 //   Applies a sequence of manually digitized correction polygons to the
@@ -39,7 +39,7 @@
 //
 // INPUT:
 //   - Integrated classification (script 06a output).
-//   - Zones FeatureCollection (Cuyo regions).
+//   - Zones FeatureCollection (Monte, Puna and High Andes regions).
 //   - NASADEM elevation (public, `NASA/NASADEM_HGT/001`).
 //   - Annual Landsat mosaics for Argentina.
 //   - 32 manually digitized correction-polygon FeatureCollections (see
@@ -47,18 +47,18 @@
 //     GEE Code Editor as geometry imports.
 //
 // OUTPUT:
-//   - Corrected classification. Exported as `CUYO-INTEGRADO-2`.
+//   - Corrected classification. Exported as `MPHA-INTEGRATED-2`.
 //
 // NOTE (kept as in the original): the region-based rules in SECTION 5
 // filter the zones FeatureCollection by the `Id` property, while the
-// rest of the Cuyo pipeline filters the same FeatureCollection by
-// `Id2` — kept exactly as found.
+// rest of the pipeline filters the same FeatureCollection by `Id2` —
+// kept exactly as found.
 //
 // PREVIOUS STEP: 06a-integration.js (produces the integrated
 //                classification this script corrects)
 // NEXT STEP:     06c-gapfill.js
 //
-// AUTHORS: MapBiomas Argentina — Cuyo team
+// AUTHORS: MapBiomas Argentina — Monte, Puna and High Andes team
 // ============================================================
 
 
@@ -76,52 +76,53 @@ var year = 2024;
 // transition left as an empty FeatureCollection simply corrects nothing.
 // Pairs marked "(+ 2)" are merged with a supplementary polygon set of
 // the same transition (SECTION 4).
-var MosaicoToHerbaceas = ee.FeatureCollection([]);         // 21 -> 12 (+ 2)
-var HumedalToMosaico = ee.FeatureCollection([]);           // 11 -> 21
-var HumedalToLeniosaCult = ee.FeatureCollection([]);       // 11 -> 9  (+ 2)
-var LeniosaCultToBosqueCerrado = ee.FeatureCollection([]); // 9  -> 3
-var LeniosaCultToBosqueAbierto = ee.FeatureCollection([]); // 9  -> 4
-var MosaicoToArbustalAbierto = ee.FeatureCollection([]);   // 21 -> 77 (+ 2)
-var LeniosaCultToArbustalCerrado = ee.FeatureCollection([]); // 9  -> 66
-var BosqueCerradoToArbustalAbierto = ee.FeatureCollection([]); // 3  -> 77
-var BosqueCerradoToBosqueAbierto = ee.FeatureCollection([]);   // 3  -> 4
-var BosqueAbiertoToArbustalAbierto = ee.FeatureCollection([]); // 4  -> 77
-var BosqueAbiertoToLeniosaCult = ee.FeatureCollection([]);     // 4  -> 9
-var BosqueCerradoToHumedal = ee.FeatureCollection([]);      // 3  -> 11
-var NieveToSD = ee.FeatureCollection([]);                   // 34 -> 25
-var AguaToSD = ee.FeatureCollection([]);                    // 33 -> 25
-var SDToAgua = ee.FeatureCollection([]);                    // 25 -> 33
-var AguaToNieve = ee.FeatureCollection([]);                 // 33 -> 34
-var HumedalToHerbacea = ee.FeatureCollection([]);           // 11 -> 12 (+ 2)
-var HumedalToBosqueCerrado = ee.FeatureCollection([]);      // 11 -> 3
-var ArbustalAbiertoToLeniosaCult = ee.FeatureCollection([]); // 77 -> 9
-var MosaicoToHumedal = ee.FeatureCollection([]);            // 21 -> 11 (+ 2)
-var MosaicoToLeniosaCult = ee.FeatureCollection([]);        // 21 -> 9
-var HumedalToArbustalAbierto = ee.FeatureCollection([]);    // 11 -> 77
-var LeniosaCultToHumedal = ee.FeatureCollection([]);        // 9  -> 11 (+ 2)
-var LeniosaCultToMosaico = ee.FeatureCollection([]);        // 9  -> 21
-var BosqueCerradoToLeniosaCult = ee.FeatureCollection([]);  // 3  -> 9
-var BosqueAbiertoToMosaico = ee.FeatureCollection([]);      // 4  -> 21
-var HumedalToSD = ee.FeatureCollection([]);                 // 11 -> 25
+var MosaicToGrassland = ee.FeatureCollection([]);              // 21 -> 12 (+ 2)
+var WetlandToMosaic = ee.FeatureCollection([]);                // 11 -> 21
+var WetlandToCultivatedWoody = ee.FeatureCollection([]);       // 11 -> 9  (+ 2)
+var CultivatedWoodyToClosedForest = ee.FeatureCollection([]);  // 9  -> 3
+var CultivatedWoodyToOpenForest = ee.FeatureCollection([]);    // 9  -> 4
+var MosaicToOpenShrubland = ee.FeatureCollection([]);          // 21 -> 77 (+ 2)
+var CultivatedWoodyToClosedShrubland = ee.FeatureCollection([]); // 9  -> 66
+var ClosedForestToOpenShrubland = ee.FeatureCollection([]);    // 3  -> 77
+var ClosedForestToOpenForest = ee.FeatureCollection([]);       // 3  -> 4
+var OpenForestToOpenShrubland = ee.FeatureCollection([]);      // 4  -> 77
+var OpenForestToCultivatedWoody = ee.FeatureCollection([]);    // 4  -> 9
+var ClosedForestToWetland = ee.FeatureCollection([]);          // 3  -> 11
+var SnowToBare = ee.FeatureCollection([]);                     // 34 -> 25
+var WaterToBare = ee.FeatureCollection([]);                    // 33 -> 25
+var BareToWater = ee.FeatureCollection([]);                    // 25 -> 33
+var WaterToSnow = ee.FeatureCollection([]);                    // 33 -> 34
+var WetlandToGrassland = ee.FeatureCollection([]);             // 11 -> 12 (+ 2)
+var WetlandToClosedForest = ee.FeatureCollection([]);          // 11 -> 3
+var OpenShrublandToCultivatedWoody = ee.FeatureCollection([]); // 77 -> 9
+var MosaicToWetland = ee.FeatureCollection([]);                // 21 -> 11 (+ 2)
+var MosaicToCultivatedWoody = ee.FeatureCollection([]);        // 21 -> 9
+var WetlandToOpenShrubland = ee.FeatureCollection([]);         // 11 -> 77
+var CultivatedWoodyToWetland = ee.FeatureCollection([]);       // 9  -> 11 (+ 2)
+var CultivatedWoodyToMosaic = ee.FeatureCollection([]);        // 9  -> 21
+var ClosedForestToCultivatedWoody = ee.FeatureCollection([]);  // 3  -> 9
+var OpenForestToMosaic = ee.FeatureCollection([]);             // 4  -> 21
+var WetlandToBare = ee.FeatureCollection([]);                  // 11 -> 25
 
 // Supplementary polygon sets, merged into the transitions marked "(+ 2)"
 // above.
-var MosaicoToHerbaceas2 = ee.FeatureCollection([]);
-var HumedalToLeniosaCult2 = ee.FeatureCollection([]);
-var MosaicoToArbustalAbierto2 = ee.FeatureCollection([]);
-var HumedalToHerbacea2 = ee.FeatureCollection([]);
-var MosaicoToHumedal2 = ee.FeatureCollection([]);
-var LeniosaCultToHumedal2 = ee.FeatureCollection([]);
+var MosaicToGrassland2 = ee.FeatureCollection([]);
+var WetlandToCultivatedWoody2 = ee.FeatureCollection([]);
+var MosaicToOpenShrubland2 = ee.FeatureCollection([]);
+var WetlandToGrassland2 = ee.FeatureCollection([]);
+var MosaicToWetland2 = ee.FeatureCollection([]);
+var CultivatedWoodyToWetland2 = ee.FeatureCollection([]);
 
 
 // ============================================================
 // SECTION 3 — INPUT DATA
 // ============================================================
 // 🔁 REPLACE: Integrated classification (script 06a output).
-var image = ee.Image('projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/COMPLEMENT_CLASSIFICATION/CUYO/CUYO-INTEGRADO-1');
+var image = ee.Image('projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/COMPLEMENT_CLASSIFICATION/MPHA/MPHA-INTEGRATED-1');
 
-// 🔁 REPLACE: Zones FeatureCollection (Cuyo regions).
-var zonif = ee.FeatureCollection('projects/YOUR-PROJECT/assets/ANCILLARY_DATA/VECTOR/CUYO/regional-assets_cuyo-argcol2_buffer2km_reg');
+// 🔁 REPLACE: Zones FeatureCollection (Monte, Puna and High Andes
+// regions).
+var zonif = ee.FeatureCollection('projects/YOUR-PROJECT/assets/ANCILLARY_DATA/VECTOR/MPHA/regional-assets_mpha-argcol2_buffer2km_reg');
 
 var DEM = ee.Image("NASA/NASADEM_HGT/001").select("elevation");
 var slope = ee.Terrain.slope(DEM).clip(zonif).rename("slope");
@@ -142,29 +143,29 @@ var years = [
 
 // 🔁 REPLACE: Update to your own GEE asset folder for the corrected
 // classification output.
-var assetClass = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/COMPLEMENT_CLASSIFICATION/CUYO';
+var assetClass = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/COMPLEMENT_CLASSIFICATION/MPHA';
 
 
 // ============================================================
 // SECTION 4 — MERGE PAIRED CORRECTION-POLYGON SETS
 // ============================================================
-var HumedalToLeniosaCultMerged = ee.FeatureCollection(HumedalToLeniosaCult)
-    .merge(ee.FeatureCollection(HumedalToLeniosaCult2));
+var WetlandToCultivatedWoodyMerged = ee.FeatureCollection(WetlandToCultivatedWoody)
+    .merge(ee.FeatureCollection(WetlandToCultivatedWoody2));
 
-var HumedalToHerbaceaMerged = ee.FeatureCollection(HumedalToHerbacea)
-    .merge(ee.FeatureCollection(HumedalToHerbacea2));
+var WetlandToGrasslandMerged = ee.FeatureCollection(WetlandToGrassland)
+    .merge(ee.FeatureCollection(WetlandToGrassland2));
 
-var MosaicoToHumedalMerged = ee.FeatureCollection(MosaicoToHumedal)
-    .merge(ee.FeatureCollection(MosaicoToHumedal2));
+var MosaicToWetlandMerged = ee.FeatureCollection(MosaicToWetland)
+    .merge(ee.FeatureCollection(MosaicToWetland2));
 
-var MosaicoToArbustalAbiertoMerged = ee.FeatureCollection(MosaicoToArbustalAbierto)
-    .merge(ee.FeatureCollection(MosaicoToArbustalAbierto2));
+var MosaicToOpenShrublandMerged = ee.FeatureCollection(MosaicToOpenShrubland)
+    .merge(ee.FeatureCollection(MosaicToOpenShrubland2));
 
-var MosaicoToHerbaceasMerged = ee.FeatureCollection(MosaicoToHerbaceas)
-    .merge(ee.FeatureCollection(MosaicoToHerbaceas2));
+var MosaicToGrasslandMerged = ee.FeatureCollection(MosaicToGrassland)
+    .merge(ee.FeatureCollection(MosaicToGrassland2));
 
-var LeniosaCultToHumedalMerged = ee.FeatureCollection(LeniosaCultToHumedal)
-    .merge(ee.FeatureCollection(LeniosaCultToHumedal2));
+var CultivatedWoodyToWetlandMerged = ee.FeatureCollection(CultivatedWoodyToWetland)
+    .merge(ee.FeatureCollection(CultivatedWoodyToWetland2));
 
 
 // ============================================================
@@ -187,196 +188,196 @@ var evi2_median = ee.ImageCollection.fromImages(bandList).toBands();
 // ============================================================
 // SECTION 6 — APPLY POLYGON-BASED CORRECTIONS (in sequence)
 // ============================================================
-////MosaicoToHerbaceas
-// Cambia los pixeles con valor 21 dentro de la geometría a 12 en todas las bandas
-var mask = image.eq(21).clip(MosaicoToHerbaceasMerged);
-var correccion = image.where(mask, 12);
-var imagen_corregida = image.blend(correccion);
+////MosaicToGrassland
+// Changes pixels with value 21 within the geometry to 12 across all bands
+var mask = image.eq(21).clip(MosaicToGrasslandMerged);
+var correction = image.where(mask, 12);
+var correctedImage = image.blend(correction);
 
-////HumedalToMosaico
-// Cambia los pixeles con valor 11 dentro de la geometría a 21 en todas las bandas
-mask = imagen_corregida.eq(11).clip(HumedalToMosaico);
-correccion = imagen_corregida.where(mask, 21);
-imagen_corregida = imagen_corregida.blend(correccion);
+////WetlandToMosaic
+// Changes pixels with value 11 within the geometry to 21 across all bands
+mask = correctedImage.eq(11).clip(WetlandToMosaic);
+correction = correctedImage.where(mask, 21);
+correctedImage = correctedImage.blend(correction);
 
-//HumedalToLeniosaCultivada
-// Cambia los pixeles con valor 11 dentro de la geometría a 9 en todas las bandas
-mask = imagen_corregida.eq(11).clip(HumedalToLeniosaCultMerged);
-correccion = imagen_corregida.where(mask, 9);
-imagen_corregida = imagen_corregida.blend(correccion);
+////WetlandToCultivatedWoody
+// Changes pixels with value 11 within the geometry to 9 across all bands
+mask = correctedImage.eq(11).clip(WetlandToCultivatedWoodyMerged);
+correction = correctedImage.where(mask, 9);
+correctedImage = correctedImage.blend(correction);
 
-////LeniosaCultToBosqueCerrado
-// Cambia los pixeles con valor 9 dentro de la geometría a 3 en todas las bandas
-mask = imagen_corregida.eq(9).clip(LeniosaCultToBosqueCerrado);
-correccion = imagen_corregida.where(mask, 3);
-imagen_corregida = imagen_corregida.blend(correccion);
+////CultivatedWoodyToClosedForest
+// Changes pixels with value 9 within the geometry to 3 across all bands
+mask = correctedImage.eq(9).clip(CultivatedWoodyToClosedForest);
+correction = correctedImage.where(mask, 3);
+correctedImage = correctedImage.blend(correction);
 
-////LeniosaCultToBosqueAbierto
-// Cambia los pixeles con valor 9 dentro de la geometría a 4 en todas las bandas
-mask = imagen_corregida.eq(9).clip(LeniosaCultToBosqueAbierto);
-correccion = imagen_corregida.where(mask, 4);
-imagen_corregida = imagen_corregida.blend(correccion);
+////CultivatedWoodyToOpenForest
+// Changes pixels with value 9 within the geometry to 4 across all bands
+mask = correctedImage.eq(9).clip(CultivatedWoodyToOpenForest);
+correction = correctedImage.where(mask, 4);
+correctedImage = correctedImage.blend(correction);
 
-////MosaicoToArbustalAbierto
-// Cambia los pixeles con valor 21 dentro de la geometría a 77 en todas las bandas
-mask = imagen_corregida.eq(21).clip(MosaicoToArbustalAbiertoMerged);
-correccion = imagen_corregida.where(mask, 77);
-imagen_corregida = imagen_corregida.blend(correccion);
+////MosaicToOpenShrubland
+// Changes pixels with value 21 within the geometry to 77 across all bands
+mask = correctedImage.eq(21).clip(MosaicToOpenShrublandMerged);
+correction = correctedImage.where(mask, 77);
+correctedImage = correctedImage.blend(correction);
 
-////LeniosaCultToArbustalCerrado
-// Cambia los pixeles con valor 9 dentro de la geometría a 66 en todas las bandas
-mask = imagen_corregida.eq(9).clip(LeniosaCultToArbustalCerrado);
-correccion = imagen_corregida.where(mask, 66);
-imagen_corregida = imagen_corregida.blend(correccion);
+////CultivatedWoodyToClosedShrubland
+// Changes pixels with value 9 within the geometry to 66 across all bands
+mask = correctedImage.eq(9).clip(CultivatedWoodyToClosedShrubland);
+correction = correctedImage.where(mask, 66);
+correctedImage = correctedImage.blend(correction);
 
-////BosqueCerradoToArbustalAbierto
-// Cambia los pixeles con valor 3 dentro de la geometría a 77 en todas las bandas
-mask = imagen_corregida.eq(3).clip(BosqueCerradoToArbustalAbierto);
-correccion = imagen_corregida.where(mask, 77);
-imagen_corregida = imagen_corregida.blend(correccion);
+////ClosedForestToOpenShrubland
+// Changes pixels with value 3 within the geometry to 77 across all bands
+mask = correctedImage.eq(3).clip(ClosedForestToOpenShrubland);
+correction = correctedImage.where(mask, 77);
+correctedImage = correctedImage.blend(correction);
 
-////BosqueCerradoToBosqueAbierto
-// Cambia los pixeles con valor 3 dentro de la geometría a 4 en todas las bandas
-mask = imagen_corregida.eq(3).clip(BosqueCerradoToBosqueAbierto);
-correccion = imagen_corregida.where(mask, 4);
-imagen_corregida = imagen_corregida.blend(correccion);
+////ClosedForestToOpenForest
+// Changes pixels with value 3 within the geometry to 4 across all bands
+mask = correctedImage.eq(3).clip(ClosedForestToOpenForest);
+correction = correctedImage.where(mask, 4);
+correctedImage = correctedImage.blend(correction);
 
-////BosqueAbiertoToArbustalAbierto
-// Cambia los pixeles con valor 4 dentro de la geometría a 77 en todas las bandas
-mask = imagen_corregida.eq(4).clip(BosqueAbiertoToArbustalAbierto);
-correccion = imagen_corregida.where(mask, 77);
-imagen_corregida = imagen_corregida.blend(correccion);
+////OpenForestToOpenShrubland
+// Changes pixels with value 4 within the geometry to 77 across all bands
+mask = correctedImage.eq(4).clip(OpenForestToOpenShrubland);
+correction = correctedImage.where(mask, 77);
+correctedImage = correctedImage.blend(correction);
 
-////BosqueAbiertoToLeniosaCult
-// Cambia los pixeles con valor 4 dentro de la geometría a 9 en todas las bandas
-mask = imagen_corregida.eq(4).clip(BosqueAbiertoToLeniosaCult);
-correccion = imagen_corregida.where(mask, 9);
-imagen_corregida = imagen_corregida.blend(correccion);
+////OpenForestToCultivatedWoody
+// Changes pixels with value 4 within the geometry to 9 across all bands
+mask = correctedImage.eq(4).clip(OpenForestToCultivatedWoody);
+correction = correctedImage.where(mask, 9);
+correctedImage = correctedImage.blend(correction);
 
-////BosqueCerradoToHumedal
-// Cambia los pixeles con valor 3 dentro de la geometría a 11 en todas las bandas
-mask = imagen_corregida.eq(3).clip(BosqueCerradoToHumedal);
-correccion = imagen_corregida.where(mask, 11);
-imagen_corregida = imagen_corregida.blend(correccion);
+////ClosedForestToWetland
+// Changes pixels with value 3 within the geometry to 11 across all bands
+mask = correctedImage.eq(3).clip(ClosedForestToWetland);
+correction = correctedImage.where(mask, 11);
+correctedImage = correctedImage.blend(correction);
 
-////Nieve a SD
-// Cambia los pixeles con valor 34 dentro de la geometría a 25 en todas las bandas
-mask = imagen_corregida.eq(34).clip(NieveToSD);
-correccion = imagen_corregida.where(mask, 25);
-imagen_corregida = imagen_corregida.blend(correccion);
+////SnowToBare
+// Changes pixels with value 34 within the geometry to 25 across all bands
+mask = correctedImage.eq(34).clip(SnowToBare);
+correction = correctedImage.where(mask, 25);
+correctedImage = correctedImage.blend(correction);
 
-////Agua a SD
-// Cambia los pixeles con valor 33 dentro de la geometría a 25 en todas las bandas
-mask = imagen_corregida.eq(33).clip(AguaToSD);
-correccion = imagen_corregida.where(mask, 25);
-imagen_corregida = imagen_corregida.blend(correccion);
+////WaterToBare
+// Changes pixels with value 33 within the geometry to 25 across all bands
+mask = correctedImage.eq(33).clip(WaterToBare);
+correction = correctedImage.where(mask, 25);
+correctedImage = correctedImage.blend(correction);
 
-////SD a Agua
-// Cambia los pixeles con valor 25 dentro de la geometría a 33 en todas las bandas
-mask = imagen_corregida.eq(25).clip(SDToAgua);
-correccion = imagen_corregida.where(mask, 33);
-imagen_corregida = imagen_corregida.blend(correccion);
+////BareToWater
+// Changes pixels with value 25 within the geometry to 33 across all bands
+mask = correctedImage.eq(25).clip(BareToWater);
+correction = correctedImage.where(mask, 33);
+correctedImage = correctedImage.blend(correction);
 
-////Agua a Nieve
-// Cambia los pixeles con valor 33 dentro de la geometría a 34 en todas las bandas
-mask = imagen_corregida.eq(33).clip(AguaToNieve);
-correccion = imagen_corregida.where(mask, 34);
-imagen_corregida = imagen_corregida.blend(correccion);
+////WaterToSnow
+// Changes pixels with value 33 within the geometry to 34 across all bands
+mask = correctedImage.eq(33).clip(WaterToSnow);
+correction = correctedImage.where(mask, 34);
+correctedImage = correctedImage.blend(correction);
 
-////HumedalToHerbacea
-// Cambia los pixeles con valor 11 dentro de la geometría a 12 en todas las bandas
-mask = imagen_corregida.eq(11).clip(HumedalToHerbaceaMerged);
-correccion = imagen_corregida.where(mask, 12);
-imagen_corregida = imagen_corregida.blend(correccion);
+////WetlandToGrassland
+// Changes pixels with value 11 within the geometry to 12 across all bands
+mask = correctedImage.eq(11).clip(WetlandToGrasslandMerged);
+correction = correctedImage.where(mask, 12);
+correctedImage = correctedImage.blend(correction);
 
-////HumedalToBosqueCerrado
-// Cambia los pixeles con valor 11 dentro de la geometría a 3 en todas las bandas
-mask = imagen_corregida.eq(11).clip(HumedalToBosqueCerrado);
-correccion = imagen_corregida.where(mask, 3);
-imagen_corregida = imagen_corregida.blend(correccion);
+////WetlandToClosedForest
+// Changes pixels with value 11 within the geometry to 3 across all bands
+mask = correctedImage.eq(11).clip(WetlandToClosedForest);
+correction = correctedImage.where(mask, 3);
+correctedImage = correctedImage.blend(correction);
 
-////ArbustalAbiertoToLeniosaCult
-// Cambia los pixeles con valor 77 dentro de la geometría a 9 en todas las bandas
-mask = imagen_corregida.eq(77).clip(ArbustalAbiertoToLeniosaCult);
-correccion = imagen_corregida.where(mask, 9);
-imagen_corregida = imagen_corregida.blend(correccion);
+////OpenShrublandToCultivatedWoody
+// Changes pixels with value 77 within the geometry to 9 across all bands
+mask = correctedImage.eq(77).clip(OpenShrublandToCultivatedWoody);
+correction = correctedImage.where(mask, 9);
+correctedImage = correctedImage.blend(correction);
 
-////MosaicoToHumedal
-// Cambia los pixeles con valor 21 dentro de la geometría a 11 en todas las bandas
-mask = imagen_corregida.eq(21).clip(MosaicoToHumedalMerged);
-correccion = imagen_corregida.where(mask, 11);
-imagen_corregida = imagen_corregida.blend(correccion);
+////MosaicToWetland
+// Changes pixels with value 21 within the geometry to 11 across all bands
+mask = correctedImage.eq(21).clip(MosaicToWetlandMerged);
+correction = correctedImage.where(mask, 11);
+correctedImage = correctedImage.blend(correction);
 
-////MosaicoToLeniosaCult
-// Cambia los pixeles con valor 21 dentro de la geometría a 9 en todas las bandas
-mask = imagen_corregida.eq(21).clip(MosaicoToLeniosaCult);
-correccion = imagen_corregida.where(mask, 9);
-imagen_corregida = imagen_corregida.blend(correccion);
+////MosaicToCultivatedWoody
+// Changes pixels with value 21 within the geometry to 9 across all bands
+mask = correctedImage.eq(21).clip(MosaicToCultivatedWoody);
+correction = correctedImage.where(mask, 9);
+correctedImage = correctedImage.blend(correction);
 
-////HumedalToArbustalAbierto
-// Cambia los pixeles con valor 11 dentro de la geometría a 77 en todas las bandas
-mask = imagen_corregida.eq(11).clip(HumedalToArbustalAbierto);
-correccion = imagen_corregida.where(mask, 77);
-imagen_corregida = imagen_corregida.blend(correccion);
+////WetlandToOpenShrubland
+// Changes pixels with value 11 within the geometry to 77 across all bands
+mask = correctedImage.eq(11).clip(WetlandToOpenShrubland);
+correction = correctedImage.where(mask, 77);
+correctedImage = correctedImage.blend(correction);
 
-////LeniosaCultToHumedal
-// Cambia los pixeles con valor 9 dentro de la geometría a 11 en todas las bandas
-mask = imagen_corregida.eq(9).clip(LeniosaCultToHumedalMerged);
-correccion = imagen_corregida.where(mask, 11);
-imagen_corregida = imagen_corregida.blend(correccion);
+////CultivatedWoodyToWetland
+// Changes pixels with value 9 within the geometry to 11 across all bands
+mask = correctedImage.eq(9).clip(CultivatedWoodyToWetlandMerged);
+correction = correctedImage.where(mask, 11);
+correctedImage = correctedImage.blend(correction);
 
-////LeniosaCultToMosaico
-// Cambia los pixeles con valor 9 dentro de la geometría a 21 en todas las bandas
-mask = imagen_corregida.eq(9).clip(LeniosaCultToMosaico);
-correccion = imagen_corregida.where(mask, 21);
-imagen_corregida = imagen_corregida.blend(correccion);
+////CultivatedWoodyToMosaic
+// Changes pixels with value 9 within the geometry to 21 across all bands
+mask = correctedImage.eq(9).clip(CultivatedWoodyToMosaic);
+correction = correctedImage.where(mask, 21);
+correctedImage = correctedImage.blend(correction);
 
-////BosqueCerradoToLeniosaCult
-// Cambia los pixeles con valor 3 dentro de la geometría a 9 en todas las bandas
-mask = imagen_corregida.eq(3).clip(BosqueCerradoToLeniosaCult);
-correccion = imagen_corregida.where(mask, 9);
-imagen_corregida = imagen_corregida.blend(correccion);
+////ClosedForestToCultivatedWoody
+// Changes pixels with value 3 within the geometry to 9 across all bands
+mask = correctedImage.eq(3).clip(ClosedForestToCultivatedWoody);
+correction = correctedImage.where(mask, 9);
+correctedImage = correctedImage.blend(correction);
 
-////BosqueAbiertoToMosaico
-// Cambia los pixeles con valor 4 dentro de la geometría a 21 en todas las bandas
-mask = imagen_corregida.eq(4).clip(BosqueAbiertoToMosaico);
-correccion = imagen_corregida.where(mask, 21);
-imagen_corregida = imagen_corregida.blend(correccion);
+////OpenForestToMosaic
+// Changes pixels with value 4 within the geometry to 21 across all bands
+mask = correctedImage.eq(4).clip(OpenForestToMosaic);
+correction = correctedImage.where(mask, 21);
+correctedImage = correctedImage.blend(correction);
 
-////HumedalToSD
-// Cambia los pixeles con valor 11 dentro de la geometría a 25 en todas las bandas
-mask = imagen_corregida.eq(11).clip(HumedalToSD);
-correccion = imagen_corregida.where(mask, 25);
-imagen_corregida = imagen_corregida.blend(correccion);
+////WetlandToBare
+// Changes pixels with value 11 within the geometry to 25 across all bands
+mask = correctedImage.eq(11).clip(WetlandToBare);
+correction = correctedImage.where(mask, 25);
+correctedImage = correctedImage.blend(correction);
 
 
 // ============================================================
 // SECTION 7 — RULE-BASED CORRECTIONS (slope, EVI2 threshold)
 // ============================================================
-//AguaToNoObservado (where slope > 10)
-mask = imagen_corregida.eq(33).mask(slope.gt(10)).clip(zonif.filter(ee.Filter.lte('Id', 5)));
-correccion = imagen_corregida.where(mask, 27);
-imagen_corregida = imagen_corregida.blend(correccion);
+//WaterToNotObserved (where slope > 10)
+mask = correctedImage.eq(33).mask(slope.gt(10)).clip(zonif.filter(ee.Filter.lte('Id', 5)));
+correction = correctedImage.where(mask, 27);
+correctedImage = correctedImage.blend(correction);
 
-////HumedalToHerbacea (where region = 5 y EVI2_median < 12000)
-mask = imagen_corregida.eq(11).clip(zonif.filter(ee.Filter.eq('Id', 5)));
-correccion = imagen_corregida
+////WetlandToGrassland (where region = 5 and EVI2_median < 12000)
+mask = correctedImage.eq(11).clip(zonif.filter(ee.Filter.eq('Id', 5)));
+correction = correctedImage
     .where(mask.and(evi2_median.lte(12000)), 12)
     .where(mask.and(evi2_median.gt(12000)), 11);
-var sinDatos = mask.and(evi2_median.mask().not());
-correccion = correccion.where(sinDatos, 27);
-imagen_corregida = imagen_corregida.blend(correccion);
+var noData = mask.and(evi2_median.mask().not());
+correction = correction.where(noData, 27);
+correctedImage = correctedImage.blend(correction);
 
 
 // ============================================================
 // SECTION 8 — EXPORT
 // ============================================================
 Export.image.toAsset({
-    "image": imagen_corregida,
-    "description": 'CUYO-INTEGRADO-2',
+    "image": correctedImage,
+    "description": 'MPHA-INTEGRATED-2',
     // 🔁 REPLACE: Update to your own GEE asset folder (see `assetClass`
     // above).
-    "assetId": assetClass + '/CUYO-INTEGRADO-2',
+    "assetId": assetClass + '/MPHA-INTEGRATED-2',
     "scale": 30,
     "pyramidingPolicy": {
         '.default': 'mode'

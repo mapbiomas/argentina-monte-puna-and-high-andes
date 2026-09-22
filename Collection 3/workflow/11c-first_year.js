@@ -1,5 +1,5 @@
 // ============================================================
-// Cuyo Collection 3 | Script 11c — First-Year Forced Consistency
+// Monte, Puna and High Andes | Collection 3 | Script 11c — First-Year Forced Consistency
 // ============================================================
 //
 // DESCRIPTION:
@@ -12,38 +12,38 @@
 //   in the source but is disabled (see NOTE).
 //
 // METHODOLOGY:
-//   1. `mask3first`: for a given class, where 1985 != class AND 1986 ==
-//      class AND 1987 == class, force 1985 to that class.
-//   2. Apply `mask3first` for every class in `ordem_exec_first`, in
-//      order.
+//   1. `forceFirstYear`: for a given class, where 1985 != class AND
+//      1986 == class AND 1987 == class, force 1985 to that class.
+//   2. Apply `forceFirstYear` for every class in `priorityOrderFirst`,
+//      in order.
 //   3. Export the result.
 //
 // INPUT:
 //   - Edge-corrected classification (script 11b output).
-//   - Zones FeatureCollection (Cuyo regions) — used only as the export
-//     region.
+//   - Zones FeatureCollection (Monte, Puna and High Andes regions) —
+//     used only as the export region.
 //
 // OUTPUT:
 //   - First-year-consistency-corrected classification. Exported as
-//     `CUYO-FINAL-3-1sp-T3y-4y-5y-v2026-b-12y3Ext`.
+//     `MPHA-FINAL-3-1sp-T3y-4y-5y-v2026-b-12y3Ext`.
 //
 // NOTE (kept as in the original): the source script also defines
-// `ordem_exec_last` and a commented-out `mask3last` function (the
+// `priorityOrderLast` and a commented-out `forceLastYear` function (the
 // mirror-image rule for the LAST year, 2022 in that draft) and a
-// commented-out `ordem_exec_middle` loop referencing `window5years` /
+// commented-out `priorityOrderMiddle` loop referencing `window5years` /
 // `window4years` functions not defined in this script — none of that is
 // active in this saved run. The source file also has a large trailing
 // commented-out block (edge-year noise correction for years 1998/2022,
 // referencing classes 67/63/22 that belong to a different territory's
-// legend, not Cuyo's) — clearly leftover from adapting another region's
-// script; omitted here as dead code.
+// legend, not this one's) — clearly leftover from adapting another
+// region's script; omitted here as dead code.
 //
-// PREVIOUS STEP: 11b-primer_ultimo_anios_amplio.js (produces the
+// PREVIOUS STEP: 11b-first_last_years_wide.js (produces the
 //                classification this script forces first-year
 //                consistency on)
-// NEXT STEP:     12-dominancia.js
+// NEXT STEP:     12-dominance.js
 //
-// AUTHORS: MapBiomas Argentina — Cuyo team
+// AUTHORS: MapBiomas Argentina — Monte, Puna and High Andes team
 // ============================================================
 
 
@@ -51,7 +51,7 @@
 // SECTION 1 — CONFIGURATION PARAMETERS
 // ============================================================
 // the first number will have priority
-var ordem_exec_first = [3, 4, 45, 66, 77, 12, 11, 9, 21, 25, 27];
+var priorityOrderFirst = [3, 4, 45, 66, 77, 12, 11, 9, 21, 25, 27];
 
 var allYears = [
     1985, 1986, 1987, 1988, 1989, 1990,
@@ -69,37 +69,38 @@ var allYears = [
 // ============================================================
 // 🔁 REPLACE: Update to your own GEE asset folder (same folder as script
 // 11b's `assetClass`).
-var assetClass = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/FILTERS/CUYO/';
+var assetClass = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/FILTERS/MPHA/';
 
-// 🔁 REPLACE: Zones FeatureCollection (Cuyo regions).
-var regions = ee.FeatureCollection('projects/YOUR-PROJECT/assets/ANCILLARY_DATA/VECTOR/CUYO/regional-assets_cuyo-argcol2_buffer2km_reg');
+// 🔁 REPLACE: Zones FeatureCollection (Monte, Puna and High Andes
+// regions).
+var regions = ee.FeatureCollection('projects/YOUR-PROJECT/assets/ANCILLARY_DATA/VECTOR/MPHA/regional-assets_mpha-argcol2_buffer2km_reg');
 
-// Carga la clasificación con filtros. prop 2026b — alternative versions
-// tried, kept as a record:
-// assetClass + 'CUYO-FINAL-3-1sp-T3y-4y-5y-v2025-1y2Ext'
-// assetClass + 'CUYO-FINAL-3-1sp-T3y-4y-5y-v2026-a-1y2Ext'
-// assetClass + 'CUYO-FINAL-3-1sp-T3y-4y-5y-v2026-c-1y2Ext'
-var Filter_exts = ee.Image(assetClass + 'CUYO-FINAL-3-1sp-T3y-4y-5y-v2026-b-1y2Ext');
+// Loads the classification with filters. prop 2026b — alternative
+// versions tried, kept as a record:
+// assetClass + 'MPHA-FINAL-3-1sp-T3y-4y-5y-v2025-1y2Ext'
+// assetClass + 'MPHA-FINAL-3-1sp-T3y-4y-5y-v2026-a-1y2Ext'
+// assetClass + 'MPHA-FINAL-3-1sp-T3y-4y-5y-v2026-c-1y2Ext'
+var Filter_exts = ee.Image(assetClass + 'MPHA-FINAL-3-1sp-T3y-4y-5y-v2026-b-1y2Ext');
 
 
 // ============================================================
 // SECTION 4 — FIRST-YEAR FORCED-CONSISTENCY FUNCTION
 // ============================================================
-var mask3first = function (valor, imagem) {
-    var mask = imagem.select('classification_1985').neq(valor)
-        .and(imagem.select('classification_1986').eq(valor))
-        .and(imagem.select('classification_1987').eq(valor));
-    var muda_img = imagem.select('classification_1985').mask(mask.eq(1)).where(mask.eq(1), valor);
-    var img_out = imagem.select('classification_1985').blend(muda_img);
+var forceFirstYear = function (targetClass, image) {
+    var mask = image.select('classification_1985').neq(targetClass)
+        .and(image.select('classification_1986').eq(targetClass))
+        .and(image.select('classification_1987').eq(targetClass));
+    var changedImage = image.select('classification_1985').mask(mask.eq(1)).where(mask.eq(1), targetClass);
+    var result = image.select('classification_1985').blend(changedImage);
 
     var remainingYears = allYears.slice(1);
-    img_out = img_out.addBands(
+    result = result.addBands(
         remainingYears.map(function (year) {
-            return imagem.select('classification_' + year);
+            return image.select('classification_' + year);
         })
     );
 
-    return img_out;
+    return result;
 };
 
 
@@ -108,9 +109,9 @@ var mask3first = function (valor, imagem) {
 // ============================================================
 var filtered = Filter_exts;
 
-for (var i_class = 0; i_class < ordem_exec_first.length; i_class++) {
-    var id_class = ordem_exec_first[i_class];
-    filtered = mask3first(id_class, filtered);
+for (var i = 0; i < priorityOrderFirst.length; i++) {
+    var classId = priorityOrderFirst[i];
+    filtered = forceFirstYear(classId, filtered);
 }
 
 
@@ -119,10 +120,10 @@ for (var i_class = 0; i_class < ordem_exec_first.length; i_class++) {
 // ============================================================
 Export.image.toAsset({
     "image": filtered,
-    "description": 'CUYO-FINAL-3-1sp-T3y-4y-5y-v2026-b-12y3Ext',
+    "description": 'MPHA-FINAL-3-1sp-T3y-4y-5y-v2026-b-12y3Ext',
     // 🔁 REPLACE: Update to your own GEE asset folder (see `assetClass`
     // above).
-    "assetId": assetClass + 'CUYO-FINAL-3-1sp-T3y-4y-5y-v2026-b-12y3Ext',
+    "assetId": assetClass + 'MPHA-FINAL-3-1sp-T3y-4y-5y-v2026-b-12y3Ext',
     "scale": 30,
     "pyramidingPolicy": {
         '.default': 'mode'

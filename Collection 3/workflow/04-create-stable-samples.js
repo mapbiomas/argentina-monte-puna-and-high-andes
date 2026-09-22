@@ -1,20 +1,20 @@
 // ============================================================
-// Cuyo Collection 3 | Script 04 — Create Stable Point Samples
+// Monte, Puna and High Andes | Collection 3 | Script 04 — Create Stable Point Samples
 // ============================================================
 //
-// LEYENDA C3
-// 3       | Bosques cerrados
-// 4       | Bosques abiertos
-// 66      | Arbustales cerrados
-// 77      | Arbustales abiertos
-// 45      | Arbustales dispersos
-// 12      | Pastizales
-// 11      | Herbacéas inundables
-// 9       | Leñosas cultivadas
-// 21      | Mosaico de Usos
-// 25      | Áreas sin vegetación
-// 33      | Ríos, lagunas y lagos
-// 34      | Hielo y nieve en superficie
+// LEGEND C3
+// 3       | Closed forest
+// 4       | Open forest
+// 66      | Closed shrubland
+// 77      | Open shrubland
+// 45      | Sparse shrubland
+// 12      | Grassland
+// 11      | Wetland (floodable herbaceous)
+// 9       | Cultivated woody vegetation
+// 21      | Mosaic of uses
+// 25      | Non-vegetated areas
+// 33      | Rivers, lagoons and lakes
+// 34      | Surface ice and snow
 //
 // DESCRIPTION:
 //   For one region, draws a stratified random sample of points from the
@@ -34,7 +34,8 @@
 //
 // INPUT:
 //   - Stable map (script 03 output).
-//   - Zones FeatureCollection (Cuyo regions, property `Id2`).
+//   - Zones FeatureCollection (Monte, Puna and High Andes regions,
+//     property `Id2`).
 //   - Annual Landsat mosaics for Argentina.
 //   - ALOS World 3D-30m terrain model (public, `JAXA/ALOS/AW3D30_V1_1`).
 //
@@ -54,7 +55,7 @@
 //                classify the stable-class map, plus complementary
 //                points)
 //
-// AUTHORS: MapBiomas Argentina — Cuyo team
+// AUTHORS: MapBiomas Argentina — Monte, Puna and High Andes team
 // ============================================================
 
 
@@ -65,7 +66,7 @@ var regionId = 15;
 
 var version = {
     'stable_map': '1',
-    'output_samples': '1' // todos los puntos sin exclusiones y el featureSpace completo
+    'output_samples': '1' // all points, no exclusions, full feature space
 };
 
 var years = [
@@ -80,42 +81,43 @@ var years = [
     2025
 ];
 
-// Modificar por metaregion // ver ppt, estratificación por superficie + 10% adicional para filtrado de outliers
+// Set per metaregion // see slides; stratification by area + 10% extra for outlier filtering
 // 🔁 REPLACE: Set from script 03's printed class-area proportions for
 // this region. Classes commented out here (3, 4, 9) had no representative
 // area in this particular region — uncomment/add as needed elsewhere.
 var nSamplesPerClass = [
-//  { 'class_id':  3, 'n_samples':220  },   // 3   | Bosques cerrados
-//  { 'class_id':  4, 'n_samples':220  },   // 4   | Bosques abiertos
-//  { 'class_id':  9, 'n_samples':220  },   // 9   | Leñosas cultivadas
-    { 'class_id': 11, 'n_samples':330  },   // 11  | Herbacéas inundables
-    { 'class_id': 12, 'n_samples':3561 },   // 12  | Pastizales
-    { 'class_id': 21, 'n_samples':330  },   // 21  | Mosaico de Usos
-    { 'class_id': 25, 'n_samples':4400  },   // 25  | Áreas sin vegetación
-    { 'class_id': 33, 'n_samples':330  },   // 33  | Ríos, lagunas y lagos
-    { 'class_id': 34, 'n_samples':330  },   // 34  | Hielo y nieve en superficie
-    { 'class_id': 45, 'n_samples':425 },   // 45  | Arbustales dispersos
-    { 'class_id': 66, 'n_samples':330  },   // 66  | Arbustales cerrados
-    { 'class_id': 77, 'n_samples':330 }    // 77  | Arbustales abiertos
+//  { 'class_id':  3, 'n_samples':220  },   // 3   | Closed forest
+//  { 'class_id':  4, 'n_samples':220  },   // 4   | Open forest
+//  { 'class_id':  9, 'n_samples':220  },   // 9   | Cultivated woody vegetation
+    { 'class_id': 11, 'n_samples':330  },   // 11  | Wetland
+    { 'class_id': 12, 'n_samples':3561 },   // 12  | Grassland
+    { 'class_id': 21, 'n_samples':330  },   // 21  | Mosaic of uses
+    { 'class_id': 25, 'n_samples':4400  },   // 25  | Non-vegetated areas
+    { 'class_id': 33, 'n_samples':330  },   // 33  | Rivers, lagoons and lakes
+    { 'class_id': 34, 'n_samples':330  },   // 34  | Surface ice and snow
+    { 'class_id': 45, 'n_samples':425 },   // 45  | Sparse shrubland
+    { 'class_id': 66, 'n_samples':330  },   // 66  | Closed shrubland
+    { 'class_id': 77, 'n_samples':330 }    // 77  | Open shrubland
 ];
 
 
 // ============================================================
 // SECTION 3 — INPUT DATA
 // ============================================================
-// 🔁 REPLACE: Zones FeatureCollection (Cuyo regions, property `Id2`).
-var assetRegions = 'projects/YOUR-PROJECT/assets/ANCILLARY_DATA/VECTOR/CUYO/regional-assets_cuyo-argcol2_buffer2km_reg';
+// 🔁 REPLACE: Zones FeatureCollection (Monte, Puna and High Andes
+// regions, property `Id2`).
+var assetRegions = 'projects/YOUR-PROJECT/assets/ANCILLARY_DATA/VECTOR/MPHA/regional-assets_mpha-argcol2_buffer2km_reg';
 // 🔁 REPLACE: Update to your own GEE asset folder for the point-sample
 // outputs.
-var outputFolder = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/SAMPLES/RANDOM_STABLE/CUYO';
+var outputFolder = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/SAMPLES/RANDOM_STABLE/MPHA';
 // 🔁 REPLACE: Stable map (script 03 output).
-var assetStable = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/STABLEMAP/CUYO/CUYO-STABLE-REGION-R1-11-1';
+var assetStable = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/STABLEMAP/MPHA/MPHA-STABLE-REGION-R1-11-1';
 // 🔁 REPLACE: Annual Landsat mosaics for Argentina.
 var assetMosaics = 'projects/YOUR-PROJECT/LANDSAT/ARGENTINA/mosaics-1';
 
 var regions = ee.FeatureCollection(assetRegions);
 
-// featureSpace recortado (alternative, smaller predictor set — not used
+// Reduced feature space (alternative, smaller predictor set — not used
 // by default; the full feature space below is what's actually selected)
 //var featureSpace = [
 //    'slope',
@@ -151,7 +153,7 @@ var regions = ee.FeatureCollection(assetRegions);
 //    "ndwi_amp"
 //];
 
-// featureSpace completo
+// Full feature space
 var featureSpace = [
     'blue_median',
     'blue_median_wet',

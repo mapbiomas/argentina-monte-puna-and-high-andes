@@ -1,25 +1,25 @@
 // ============================================================
-// Cuyo Collection 3 | Script 05 — Add Complementary Points & Classify
+// Monte, Puna and High Andes | Collection 3 | Script 05 — Add Complementary Points & Classify
 // ============================================================
 //
-// Genera v1 metaregional de Complement_Classification usando la v4 de
-// las random stable samples, sin muestras complementarias (este run
-// particular no usó puntos complementarios — ver `complementary` abajo).
-// Adaptado a MetaRegion usando la v4 de las muestras estables.
+// Generates v1 of the metaregional Complement_Classification using v4 of
+// the random stable samples, without complementary points (this
+// particular run did not use complementary points — see `complementary`
+// below). Adapted to MetaRegion using v4 of the stable samples.
 //
-// LEYENDA
-// 3   | Bosques cerrados             | #1f8d49
-// 4   | Bosques abiertos             | #7dc975
-// 9   | Leñosas cultivadas           | #7a6c00
-// 11  | Herbacéas inundables         | #519799
-// 12  | Pastizales                   | #d6bc74
-// 21  | Mosaico de Usos              | #ffefc3
-// 25  | Áreas sin vegetación         | #db4d4f
-// 33  | Ríos, lagunas y lagos        | #2532e4
-// 34  | Hielo y nieve en superficie  | #93dfe6
-// 45  | Arbustales dispersos         | #e04cfa
-// 66  | Arbustales cerrados          | #91ff36
-// 77  | Arbustales abiertos          | #a2c830
+// LEGEND
+// 3   | Closed forest              | #1f8d49
+// 4   | Open forest                | #7dc975
+// 9   | Cultivated woody veg.      | #7a6c00
+// 11  | Wetland (floodable herb.)  | #519799
+// 12  | Grassland                  | #d6bc74
+// 21  | Mosaic of uses             | #ffefc3
+// 25  | Non-vegetated areas        | #db4d4f
+// 33  | Rivers, lagoons and lakes  | #2532e4
+// 34  | Surface ice and snow       | #93dfe6
+// 45  | Sparse shrubland           | #e04cfa
+// 66  | Closed shrubland           | #91ff36
+// 77  | Open shrubland             | #a2c830
 //
 // DESCRIPTION:
 //   Refines one region's stable-samples classification by adding
@@ -46,7 +46,8 @@
 //   - Manually digitized per-class correction polygons (drawn per region
 //     — see SECTION 2).
 //   - Per (region, year) stable sample points (script 04 output).
-//   - Zones FeatureCollection (Cuyo regions, property `Id2`).
+//   - Zones FeatureCollection (Monte, Puna and High Andes regions,
+//     property `Id2`).
 //   - Annual Landsat mosaics for Argentina.
 //   - ALOS World 3D-30m terrain slope (public) and a FABDEM-derived
 //     slope layer specific to this repository.
@@ -54,7 +55,7 @@
 // OUTPUT:
 //   - Multi-year classification image for the region, one
 //     `classification_<year>` band per year. Exported as
-//     `CUYO-REGION-<regionId>-<version.output>`.
+//     `MPHA-REGION-<regionId>-<version.output>`.
 //
 // USAGE NOTE: this script processes ONE region per run — change
 // `regionId` (SECTION 1) and redraw the correction polygons (SECTION 2)
@@ -67,7 +68,7 @@
 // NEXT STEP:     06a-integration.js (mosaics the regions and integrates
 //                the classifications produced here)
 //
-// AUTHORS: MapBiomas Argentina — Cuyo team
+// AUTHORS: MapBiomas Argentina — Monte, Puna and High Andes team
 // ============================================================
 
 
@@ -77,33 +78,33 @@
 // MetaRegion
 var regionId = 15;
 
-// OJO CON ESTO Y LAS VERSIONES DE LAS SAMPLES
+// CAREFUL WITH THIS AND THE SAMPLE VERSIONS
 var version = {
     'classification': '1',
     'stable_map': '1',
     'stable_samples': '4',
-    'output': '1', // primera metaregional
+    'output': '1', // first metaregional pass
 };
 
 var nTrainingPoints = 2000;   // Number of points to training
 var nValidationPoints = 500;   // Number of points to validate
 
-// EDITAR — number of complementary points per class for this region. All
+// EDIT — number of complementary points per class for this region. All
 // 0 in this saved run (no complementary points were needed here); set to
 // the desired count per class when correcting a different region.
 var complementary = [
-    [ 3, 0], // 3   | Bosques cerrados
-    [ 4, 0], // 4   | Bosques abiertos
-    [ 9, 0], // 9   | Leñosas cultivadas
-    [11, 0], //11  | Herbacéas inundables
-    [12, 0], //12  | Pastizales
-    [21, 0], //21  | Mosaico de Usos
-    [25, 0], //25  | Áreas sin vegetación
-    [33, 0], //33  | Ríos, lagunas y lagos
-    [34, 0], //34  | Hielo y nieve en superficie
-    [45, 0], //45  | Arbustales dispersos
-    [66, 0], //66  | Arbustales cerrados
-    [77, 0]  //77  | Arbustales abiertos
+    [ 3, 0], // 3   | Closed forest
+    [ 4, 0], // 4   | Open forest
+    [ 9, 0], // 9   | Cultivated woody vegetation
+    [11, 0], //11  | Wetland
+    [12, 0], //12  | Grassland
+    [21, 0], //21  | Mosaic of uses
+    [25, 0], //25  | Non-vegetated areas
+    [33, 0], //33  | Rivers, lagoons and lakes
+    [34, 0], //34  | Surface ice and snow
+    [45, 0], //45  | Sparse shrubland
+    [66, 0], //66  | Closed shrubland
+    [77, 0]  //77  | Open shrubland
 ];
 
 // Landsat images that will be added to Layers
@@ -168,18 +169,18 @@ var featureSpace = [
 // of polygons per class that needs correction (draw them as GEE Code
 // Editor geometry imports, property `class` = the class code). Any class
 // left as an empty FeatureCollection below simply contributes 0 points.
-var BosquesCerrados = ee.FeatureCollection([]);       // 3  | Bosques cerrados
-var BosquesAbiertos = ee.FeatureCollection([]);       // 4  | Bosques abiertos
-var ArbustalesCerrados = ee.FeatureCollection([]);    // 66 | Arbustales cerrados
-var ArbustalesAbiertos = ee.FeatureCollection([]);    // 77 | Arbustales abiertos
-var ArbustalesDispersos = ee.FeatureCollection([]);   // 45 | Arbustales dispersos
-var Pastizales = ee.FeatureCollection([]);            // 12 | Pastizales
-var HerbaceasInundables = ee.FeatureCollection([]);   // 11 | Herbacéas inundables
-var LeniosasCultivadas = ee.FeatureCollection([]);    // 9  | Leñosas cultivadas
-var MosaicoUsos = ee.FeatureCollection([]);           // 21 | Mosaico de Usos
-var OtrasSinVegetacion = ee.FeatureCollection([]);    // 25 | Áreas sin vegetación
-var CuerposAgua = ee.FeatureCollection([]);           // 33 | Ríos, lagunas y lagos
-var HieloNieve = ee.FeatureCollection([]);            // 34 | Hielo y nieve en superficie
+var ClosedForest = ee.FeatureCollection([]);        // 3  | Closed forest
+var OpenForest = ee.FeatureCollection([]);          // 4  | Open forest
+var ClosedShrubland = ee.FeatureCollection([]);     // 66 | Closed shrubland
+var OpenShrubland = ee.FeatureCollection([]);       // 77 | Open shrubland
+var SparseShrubland = ee.FeatureCollection([]);     // 45 | Sparse shrubland
+var Grassland = ee.FeatureCollection([]);           // 12 | Grassland
+var Wetland = ee.FeatureCollection([]);             // 11 | Wetland
+var CultivatedWoody = ee.FeatureCollection([]);     // 9  | Cultivated woody vegetation
+var Mosaic = ee.FeatureCollection([]);              // 21 | Mosaic of uses
+var Bare = ee.FeatureCollection([]);                // 25 | Non-vegetated areas
+var Water = ee.FeatureCollection([]);               // 33 | Rivers, lagoons and lakes
+var Snow = ee.FeatureCollection([]);                // 34 | Surface ice and snow
 
 
 // ============================================================
@@ -187,26 +188,27 @@ var HieloNieve = ee.FeatureCollection([]);            // 34 | Hielo y nieve en s
 // ============================================================
 // 🔁 REPLACE: Annual Landsat mosaics for Argentina.
 var assetMosaics = 'projects/YOUR-PROJECT/LANDSAT/ARGENTINA/mosaics-1';
-// 🔁 REPLACE: Zones FeatureCollection (Cuyo regions, property `Id2`).
-var assetRegions = 'projects/YOUR-PROJECT/assets/ANCILLARY_DATA/VECTOR/CUYO/regional-assets_cuyo-argcol2_buffer2km_reg';
+// 🔁 REPLACE: Zones FeatureCollection (Monte, Puna and High Andes
+// regions, property `Id2`).
+var assetRegions = 'projects/YOUR-PROJECT/assets/ANCILLARY_DATA/VECTOR/MPHA/regional-assets_mpha-argcol2_buffer2km_reg';
 // 🔁 REPLACE: Per (region, year) stable sample points (script 04 output).
-var assetStableSamples = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/SAMPLES/RANDOM_STABLE/CUYO';
+var assetStableSamples = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/SAMPLES/RANDOM_STABLE/MPHA';
 // 🔁 REPLACE: Update to your own GEE asset folder for the complementary
 // training points/polygons.
-var assetAdditionalSamples = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/SAMPLES/COMPLEMENT/CUYO';
+var assetAdditionalSamples = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/SAMPLES/COMPLEMENT/MPHA';
 // 🔁 REPLACE: Update to your own GEE asset folder for the classification
 // output.
-var assetClass = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/COMPLEMENT_CLASSIFICATION/CUYO';
+var assetClass = 'projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/COMPLEMENT_CLASSIFICATION/MPHA';
 
-// Areas Estables MetaRegion — history: earlier versions mosaicked 5
+// MetaRegion stable areas — history: earlier versions mosaicked 5
 // separate per-region stable maps (R1..R5); the current stable map
 // (script 03) already covers all regions in one asset (R1-11).
-// var stablemapR1 = ee.Image('.../STABLEMAP/CUYO/CUYO-STABLE-REGION-1-1');
+// var stablemapR1 = ee.Image('.../STABLEMAP/MPHA/MPHA-STABLE-REGION-1-1');
 // ... (R2..R5) ...
 // var assetStable = ee.ImageCollection([stablemapR1, ..., stablemapR5]).mosaic();
 
 // 🔁 REPLACE: Stable map (script 03 output).
-var assetStable = ee.Image('projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/STABLEMAP/CUYO/CUYO-STABLE-REGION-R1-11-1');
+var assetStable = ee.Image('projects/YOUR-PROJECT/assets/LAND-COVER/COLLECTION-3/GENERAL/CLASSIFICATION/STABLEMAP/MPHA/MPHA-STABLE-REGION-R1-11-1');
 
 var mosaics = ee.ImageCollection(assetMosaics);
 var regions = ee.FeatureCollection(assetRegions);
@@ -295,18 +297,18 @@ var shuffle = function (collection, seed) {
 var stable = ee.Image(assetStable);
 
 var samplesList = [
-      typeof (BosquesCerrados)      !== 'undefined' ? BosquesCerrados      : ee.FeatureCollection([]), //3   | Bosques cerrados
-      typeof (BosquesAbiertos)      !== 'undefined' ? BosquesAbiertos      : ee.FeatureCollection([]), //4   | Bosques abiertos
-      typeof (LeniosasCultivadas)   !== 'undefined' ? LeniosasCultivadas   : ee.FeatureCollection([]), //9   | Leñosas cultivadas
-      typeof (HerbaceasInundables)  !== 'undefined' ? HerbaceasInundables  : ee.FeatureCollection([]), //11  | Herbacéas inundables
-      typeof (Pastizales)           !== 'undefined' ? Pastizales           : ee.FeatureCollection([]), //12  | Pastizales
-      typeof (MosaicoUsos)          !== 'undefined' ? MosaicoUsos          : ee.FeatureCollection([]), //21  | Mosaico de Usos
-      typeof (OtrasSinVegetacion)   !== 'undefined' ? OtrasSinVegetacion   : ee.FeatureCollection([]), //25  | Áreas sin vegetación
-      typeof (CuerposAgua)          !== 'undefined' ? CuerposAgua          : ee.FeatureCollection([]), //33  | Ríos, lagunas y lagos
-      typeof (HieloNieve)           !== 'undefined' ? HieloNieve           : ee.FeatureCollection([]), //34  | Hielo y nieve en superficie
-      typeof (ArbustalesDispersos)  !== 'undefined' ? ArbustalesDispersos  : ee.FeatureCollection([]), //45  | Arbustales dispersos
-      typeof (ArbustalesCerrados)   !== 'undefined' ? ArbustalesCerrados   : ee.FeatureCollection([]), //66  | Arbustales cerrados
-      typeof (ArbustalesAbiertos)   !== 'undefined' ? ArbustalesAbiertos   : ee.FeatureCollection([]), //77  | Arbustales abiertos
+      typeof (ClosedForest)     !== 'undefined' ? ClosedForest     : ee.FeatureCollection([]), //3   | Closed forest
+      typeof (OpenForest)       !== 'undefined' ? OpenForest       : ee.FeatureCollection([]), //4   | Open forest
+      typeof (CultivatedWoody)  !== 'undefined' ? CultivatedWoody  : ee.FeatureCollection([]), //9   | Cultivated woody vegetation
+      typeof (Wetland)          !== 'undefined' ? Wetland          : ee.FeatureCollection([]), //11  | Wetland
+      typeof (Grassland)        !== 'undefined' ? Grassland        : ee.FeatureCollection([]), //12  | Grassland
+      typeof (Mosaic)           !== 'undefined' ? Mosaic           : ee.FeatureCollection([]), //21  | Mosaic of uses
+      typeof (Bare)             !== 'undefined' ? Bare             : ee.FeatureCollection([]), //25  | Non-vegetated areas
+      typeof (Water)            !== 'undefined' ? Water            : ee.FeatureCollection([]), //33  | Rivers, lagoons and lakes
+      typeof (Snow)             !== 'undefined' ? Snow             : ee.FeatureCollection([]), //34  | Surface ice and snow
+      typeof (SparseShrubland)  !== 'undefined' ? SparseShrubland  : ee.FeatureCollection([]), //45  | Sparse shrubland
+      typeof (ClosedShrubland)  !== 'undefined' ? ClosedShrubland  : ee.FeatureCollection([]), //66  | Closed shrubland
+      typeof (OpenShrubland)    !== 'undefined' ? OpenShrubland    : ee.FeatureCollection([]), //77  | Open shrubland
 ];
 
 // merges all polygons
@@ -369,7 +371,7 @@ var aditionalSamplesPoints = aditionalTrainingPoints.merge(aditionalValidationPo
 var terrain = ee.Image("JAXA/ALOS/AW3D30_V1_1").select("AVE");
 var slope = ee.Terrain.slope(terrain);
 // 🔁 REPLACE: Region-specific slope derived from a FABDEM DEM.
-var slope_fab = ee.Image("projects/YOUR-PROJECT/assets/ANCILLARY_DATA/RASTER/CUYO/slope_JAXA-FABDEM_HD").select("FABDEM").rename('slope_fab');
+var slope_fab = ee.Image("projects/YOUR-PROJECT/assets/ANCILLARY_DATA/RASTER/MPHA/slope_JAXA-FABDEM_HD").select("FABDEM").rename('slope_fab');
 
 var classifiedList = [];
 
@@ -379,7 +381,7 @@ years.forEach(
         // read stable samples generated by step 4
         var stableSamples = assetStableSamples + '/samples-stable-' + year.toString() + '-' + regionId.toString() + '-' + version.stable_samples;
 
-        // filtra outliers
+        // filter outliers
         var stableSamplesPoints = ee.FeatureCollection(stableSamples).filter(ee.Filter.eq('is_outlier', 'no'));
 
         var mosaicYear = mosaics
@@ -445,14 +447,14 @@ classifiedStack = classifiedStack
     .set('collection_id', 1.0)
     .set('region_id', regionId)
     .set('version', version.classification)
-    .set('territory', 'CUYO');
+    .set('territory', 'MPHA');
 
 Export.image.toAsset({
     "image": classifiedStack,
-    "description": 'CUYO-REGION-' + regionId + '-' + version.output,
+    "description": 'MPHA-REGION-' + regionId + '-' + version.output,
     // 🔁 REPLACE: Update to your own GEE asset folder (see `assetClass`
     // above).
-    "assetId": assetClass + '/CUYO-REGION-' + regionId + '-' + version.output,
+    "assetId": assetClass + '/MPHA-REGION-' + regionId + '-' + version.output,
     "scale": 30,
     "pyramidingPolicy": {
         '.default': 'mode'
